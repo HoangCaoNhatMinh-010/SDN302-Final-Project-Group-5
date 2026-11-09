@@ -1,0 +1,214 @@
+MỤC LỤC
+1. Mục đích tài liệu
+2. Mô hình kinh doanh
+3. Phân loại dịch vụ và quy trình đặt lịch
+4. Hồ sơ thú cưng
+5. Chính sách cọc và no-show
+6. Pháp lý và chứng chỉ hành nghề
+7. Bảo vệ dữ liệu cá nhân
+8. Phạm vi MVP
+9. Cách đo lường thành công
+10. Câu hỏi phải trả lời trước khi code
+11. Rủi ro lớn nhất
+12. Checklist tổng hợp trước khi bắt đầu
+
+1. MỤC ĐÍCH TÀI LIỆU
+Tài liệu này tổng hợp những điểm cần chốt trước khi viết dòng code đầu tiên cho dự án "Ứng dụng book lịch chăm sóc thú cưng". Mục tiêu là giúp đội ngũ:
+- Tránh phải làm lại kiến trúc dữ liệu khi mở rộng.
+- Tránh vi phạm quy định pháp lý về hành nghề thú y và bảo vệ dữ liệu cá nhân.
+- Tránh xây một sản phẩm "đẹp nhưng không ai dùng" vì không khớp quy trình vận hành thực tế của cơ sở dịch vụ.
+- Có tiêu chí rõ ràng để biết khi nào MVP đủ để đưa vào vận hành thật.
+Đối tượng đọc: người lập kế hoạch dự án, product owner, tech lead, và các bên liên quan nghiệp vụ.
+
+2. MÔ HÌNH KINH DOANH
+2.1. Hai hướng chính
+Tiêu chí	             Nền tảng kết nối (Marketplace)	                 Công cụ vận hành cho một cơ sở
+Bạn bán gì	       Kết nối chủ nuôi với nhiều phòng khám/spa	    Phần mềm để một cơ sở quản lý lịch và hồ sơ
+Ai chịu trách 
+nhiệm chuyên môn	 Cơ sở dịch vụ đối tác	                        Cơ sở của bạn (hoặc khách hàng của bạn)
+Độ phức tạp 
+dữ liệu	           Cao: nhiều cơ sở, nhiều chính                  Thấp hơn: một chính sách, một quy trình
+                   sách, nhiều mức giá	
+Rào cản 
+pháp lý	           Giao dịch điện tử và dữ liệu	                  Có thể liên quan giấy phép hành nghề thú y 
+                                                                  nếu bạn sở hữu cơ sở
+
+2.2. Khuyến nghị
+- Nếu chưa có quan hệ với nhiều cơ sở dịch vụ, nên bắt đầu bằng công cụ cho một cơ sở cụ thể. Đây là điểm khởi đầu thực tế hơn và giúp bạn hiểu nghiệp vụ trước khi mở rộng.
+- Nếu chọn marketplace, phải giải quyết song song hai bài toán: thuyết phục cơ sở tham gia và đảm bảo trải nghiệm nhất quán cho chủ nuôi.
+- Nếu có ý định mở rộng thành marketplace sau này, cần thiết kế multi-tenant ngay từ đầu (mỗi cơ sở là một tenant riêng trong cùng hệ thống).
+
+3. PHÂN LOẠI DỊCH VỤ VÀ QUY TRÌNH ĐẶT LỊCH
+3.1. Các loại hình dịch vụ có bản chất vận hành khác nhau
+- Khám thú y: thời gian linh hoạt, có thể phát sinh cấp cứu, cần phân loại trước (triage).
+- Spa & grooming: thời lượng phụ thuộc giống, bộ lông, tình trạng rối; cần đặt cọc để giảm no-show.
+- Lưu trú (pet hotel/boarding): cần kiểm tra vaccine, giấy tờ; có thể kéo dài nhiều ngày.
+- Tiêm phòng/định kỳ: thường theo lịch cố định, có thể nhắc tự động.
+
+3.2. Nguyên tắc thiết kế luồng đặt lịch
+- Không dùng một logic đặt lịch duy nhất cho mọi dịch vụ. Cần thiết kế luồng riêng theo từng loại dịch vụ.
+- Phân biệt rõ dịch vụ nào chủ nuôi tự đặt online, dịch vụ nào cần nhân viên sàng lọc, dịch vụ nào phải hướng dẫn gọi ngay (tình huống khẩn cấp không thể đánh giá qua form điện tử).
+- Tách biệt trạng thái "yêu cầu đặt lịch" và "lịch hẹn đã xác nhận" — đây là hai trạng thái khác nhau trong quy trình.
+- Với grooming, thời lượng có thể thay đổi tùy bộ lông; cần xác nhận lại thời lượng sau khi đánh giá sơ bộ.
+
+3.3. Thông tin cần thu thập khi tiếp nhận
+Tên thú cưng, tuổi, giống, tình trạng sức khỏe, dịch vụ mong muốn, và ghi chú đặc biệt (dị ứng, hành vi). Đây là dữ liệu đầu vào bắt buộc trước khi xác nhận lịch.
+
+4. HỒ SƠ THÚ CƯNG
+4.1. Bản chất dữ liệu
+Mỗi thú cưng là một thực thể dữ liệu độc lập với chủ nuôi. Một chủ có thể có nhiều thú cưng, mỗi con có lịch sử riêng. Hồ sơ thú cưng không thể chỉ là một trường "ghi chú" trong lịch hẹn.
+
+4.2. Các nhóm thông tin cần quản lý
+- Thông tin cơ bản: giống, màu, cân nặng, ngày sinh, đặc điểm nhận dạng.
+- Lịch sử tiêm phòng: loại vaccine, ngày tiêm, ngày nhắc mũi tiếp theo, số lô, cơ sở thực hiện.
+- Lịch sử khám và điều trị: ngày, lý do, chẩn đoán, đơn thuốc, kết quả xét nghiệm.
+- Dị ứng và ghi chú đặc biệt: dị ứng thuốc, hành vi khi làm dịch vụ.
+
+4.3. Yêu cầu kỹ thuật
+- Hồ sơ thú cưng phải là entity riêng, có quan hệ với chủ nuôi, và có thể được tham chiếu từ nhiều lịch hẹn khác nhau.
+- Cần nhắc nhở tự động cho mũi tiêm tiếp theo (vaccine tracker).
+- Nếu bỏ qua bước này, sẽ phải làm lại cấu trúc dữ liệu khi mở rộng.
+
+5. CHÍNH SÁCH CỌC VÀ NO-SHOW
+5.1. Vì sao cần cọc: No-show là vấn đề nghiêm trọng vì thời gian của nhân viên grooming hoặc bác sĩ thú y là nguồn lực có hạn, không thể lấp chỗ trống ngay.
+
+5.2. Các mô hình tham khảo
+- Đặt cọc hoàn lại một phần nếu hủy trước thời hạn (ví dụ 24 giờ).
+- Pre-authorisation: giữ một khoản trên thẻ khi đặt lịch, chỉ trừ nếu no-show hoặc hủy muộn; nếu dịch vụ hoàn thành, khoản giữ chuyển thành thanh toán.
+- Phí no-show cố định áp dụng cho lần sau.
+
+5.3. Nguyên tắc triển khai
+- Chính sách cọc phải hiển thị rõ trước khi chủ nuôi xác nhận.
+- Cần có cơ chế xử lý ngoại lệ (ví dụ thú cưng bị ốm đột xuất).
+- Luồng thanh toán và hoàn tiền phải được thiết kế song song với luồng đặt lịch, không phải thêm vào sau.
+
+6. PHÁP LÝ VÀ CHỨNG CHỈ HÀNH NGHỀ
+6.1. Hai tầng pháp lý cần phân biệt
+a) Tầng 1 — Đăng ký kinh doanh
+- Dịch vụ chăm sóc thú cưng (tắm, cắt tỉa, lưu trú, tư vấn dinh dưỡng) thường không thuộc ngành nghề kinh doanh có điều kiện đặc biệt.
+- Chỉ cần đăng ký hộ kinh doanh hoặc doanh nghiệp theo quy định thông thường, với mã ngành phù hợp (ví dụ 9609 — dịch vụ hỗ trợ xã hội khác).
+- Địa điểm cần giấy tờ chứng minh quyền sử dụng hợp pháp và đảm bảo vệ sinh, cách ly.
+
+b) Tầng 2 — Hành nghề thú y
+- Nếu ứng dụng kết nối với dịch vụ khám, chẩn đoán, chữa bệnh, phẫu thuật hoặc tiêm phòng, cá nhân thực hiện phải có chứng chỉ hành nghề thú y phù hợp.
+- Chứng chỉ có giá trị 05 năm và sử dụng trong phạm vi cả nước.
+- Yêu cầu tối thiểu: bằng trung cấp chuyên ngành thú y hoặc tương đương đối với chẩn đoán, chữa bệnh, phẫu thuật.
+- Cơ sở hành nghề cần giấy phép hoạt động thú y tại Chi cục Thú y địa phương.
+
+6.2. Nguyên tắc thiết kế sản phẩm
+- Nếu xây marketplace: phân loại rõ dịch vụ nào yêu cầu chứng chỉ, không để dịch vụ y tế được đặt lịch như dịch vụ spa thông thường.
+- Nếu xây công cụ cho một cơ sở: xác định ngay từ đầu cơ sở đó đã có đủ giấy phép hay chưa.
+
+7. BẢO VỆ DỮ LIỆU CÁ NHÂN
+7.1. Phạm vi áp dụng
+Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân áp dụng cho dữ liệu cá nhân của chủ nuôi (tên, số điện thoại, địa chỉ, lịch sử giao dịch). Thông tin sức khỏe của thú cưng, dù không phải dữ liệu cá nhân của con người, vẫn có thể tiết lộ thông tin về chủ nuôi (vị trí, thói quen sinh hoạt, khả năng tài chính).
+
+7.2. Yêu cầu tối thiểu
+- Consent rõ ràng cho việc thu thập và xử lý dữ liệu chủ nuôi và thú cưng.
+- Phân quyền truy cập theo vai trò: ai được xem hồ sơ sức khỏe của thú cưng? Nhân viên grooming có cần xem lịch sử bệnh án không?
+- Quy trình xóa dữ liệu khi chủ nuôi yêu cầu.
+- Bảo mật dữ liệu thanh toán nếu có đặt cọc.
+- Thiết kế quyền truy cập theo vai trò ngay từ đầu, đặc biệt nếu xây marketplace có nhiều cơ sở cùng truy cập.
+
+8. PHẠM VI MVP
+8.1. MVP nên bao gồm
+- Một cơ sở duy nhất (hoặc một nhóm nhỏ cơ sở do bạn kiểm soát).
+- 1–2 loại dịch vụ (ví dụ: spa/grooming và khám thú y cơ bản).
+- Hồ sơ thú cưng cơ bản: thông tin, lịch sử tiêm phòng, ghi chú dị ứng.
+- Đặt lịch có xác nhận: trạng thái "yêu cầu" và "đã xác nhận" tách biệt.
+- Đặt cọc đơn giản cho dịch vụ dễ no-show (grooming).
+- Nhắc hẹn tự động qua Zalo/SMS/push.
+
+8.2. MVP chưa nên bao gồm
+- AI chẩn đoán.
+- Marketplace đa cơ sở.
+- Ví điện tử riêng.
+- Tích hợp HIS/EMR phức tạp.
+- Đa thành phố.
+
+8.3. Tiêu chí MVP "chạy được thật"
+Một chủ nuôi có thể tạo hồ sơ cho thú cưng, chọn dịch vụ, đặt lịch, nhận xác nhận, và cơ sở dịch vụ nhìn thấy lịch đó 
+cùng hồ sơ thú cưng — tất cả trong một cơ sở duy nhất.
+Vòng lặp cốt lõi: tạo hồ sơ thú cưng → tìm cơ sở đã được xác thực → đặt lịch, với cơ sở được xác thực thủ công 
+bởi admin trong giai đoạn đầu.
+
+9. CÁCH ĐO LƯỜNG THÀNH CÔNG
+Chỉ số	                                  Câu hỏi nó trả lời	                              Mục tiêu MVP gợi ý
+Tỷ lệ lịch hẹn hoàn thành	          Trong số lịch đã đặt, bao nhiêu % được thực hiện?	          > 80%
+Tỷ lệ no-show	                      Bao nhiêu % khách không đến mà không hủy?	                  < 10% (sau khi có cọc)
+Tỷ lệ chủ nuôi quay lại	            Bao nhiêu % đặt lịch lần thứ hai trong 90 ngày?	            > 40%
+Thời gian xác nhận lịch	            Từ lúc chủ nuôi yêu cầu đến lúc cơ sở xác nhận	            < 2 giờ (giờ làm việc)
+
+Nguyên tắc: Chọn một chỉ số chính phản ánh trực tiếp giá trị vận hành, các chỉ số còn lại là phụ. Đo lường để biết khi nào nên 
+mở rộng, khi nào cần điều chỉnh chính sách cọc, khi nào nên dừng lại củng cố chất lượng.
+
+10. CÂU HỎI PHẢI TRẢ LỜI TRƯỚC KHI CODE
+- Mô hình: Marketplace hay công cụ cho một cơ sở?
+- Dịch vụ: Những loại dịch vụ nào sẽ có trong MVP? Dịch vụ nào cần chứng chỉ hành nghề thú y?
+- Hồ sơ thú cưng: Cấu trúc dữ liệu đã đủ để lưu lịch sử tiêm phòng và dị ứng chưa?
+- Cọc: Có thu cọc không? Chính sách hoàn/hủy thế nào? Ai chịu phí cổng thanh toán?
+- Pháp lý: Cơ sở dịch vụ đã có giấy phép hoạt động thú y (nếu có dịch vụ y tế) chưa?
+- Dữ liệu: Ai được xem hồ sơ sức khỏe thú cưng? Lưu trong bao lâu?
+- MVP: Chốt được một cơ sở, 1–2 dịch vụ, có cọc cơ bản chưa?
+
+11. RỦI RO LỚN NHẤT
+- Rủi ro nghiệp vụ: Dùng một logic đặt lịch duy nhất cho mọi dịch vụ → thời lượng sai, xung đột lịch, trải nghiệm kém.
+- Rủi ro dữ liệu: Hồ sơ thú cưng bị phân mảnh hoặc không được tham chiếu đúng → mất thông tin tiêm phòng, ảnh hưởng đến an toàn dịch vụ.
+- Rủi ro pháp lý: Cho phép đặt dịch vụ y tế thú y mà không kiểm tra chứng chỉ hành nghề của người thực hiện.
+- Rủi ro tài chính: Không có cọc hoặc chính sách no-show lỏng lẻo → thất thoát doanh thu do khung giờ trống.
+- Rủi ro vận hành: Marketplace đa cơ sở nhưng không chuẩn hóa được chính sách và giá → chủ nuôi so sánh và mất niềm tin.
+
+12. CHECKLIST TỔNG HỢP TRƯỚC KHI BẮT ĐẦU
+12.1. Quyết định chiến lược
+□ Đã chọn mô hình: marketplace hay công cụ cho một cơ sở.
+□ Đã xác định đối tượng người dùng chính (chủ nuôi, nhân viên cơ sở, quản lý).
+□ Đã chốt 1–2 loại dịch vụ cho MVP.
+□ Đã chốt địa bàn triển khai MVP (một cơ sở hoặc một khu vực nhỏ).
+
+12.2. Nghiệp vụ
+□ Đã phân loại dịch vụ theo yêu cầu vận hành và pháp lý.
+□ Đã thiết kế luồng đặt lịch riêng cho từng loại dịch vụ.
+□ Đã tách biệt trạng thái "yêu cầu" và "đã xác nhận".
+□ Đã chốt cấu trúc hồ sơ thú cưng (thông tin, tiêm phòng, dị ứng, lịch sử khám).
+□ Đã chốt chính sách cọc và no-show, có cơ chế ngoại lệ.
+
+12.3. Pháp lý và dữ liệu
+□ Đã xác định dịch vụ nào yêu cầu chứng chỉ hành nghề thú y.
+□ Đã kiểm tra cơ sở dịch vụ có giấy phép hoạt động thú y (nếu áp dụng).
+□ Đã có consent rõ ràng cho thu thập và xử lý dữ liệu.
+□ Đã thiết kế phân quyền truy cập hồ sơ thú cưng theo vai trò.
+□ Đã có quy trình xóa dữ liệu khi chủ nuôi yêu cầu.
+□ Đã có phương án bảo mật dữ liệu thanh toán.
+
+12.4. Kỹ thuật và vận hành
+□ Đã chốt MVP: một cơ sở, 1–2 dịch vụ, có cọc cơ bản.
+□ Đã chọn một chỉ số chính để đo thành công.
+□ Đã có kênh nhắc hẹn (Zalo/SMS/push).
+□ Đã có kế hoạch xác thực cơ sở thủ công trong giai đoạn đầu.
+□ Đã có kế hoạch thu thập phản hồi từ chủ nuôi và nhân viên cơ sở sau 2–4 tuần vận hành.
+
+12.5. Điều kiện "Go / No-Go"
+Chỉ bắt đầu code khi tất cả các mục sau đã rõ:
+□ Mô hình kinh doanh đã chốt.
+□ Luồng đặt lịch cho từng loại dịch vụ đã được vẽ và được nhân viên cơ sở xác nhận.
+□ Cấu trúc hồ sơ thú cưng đã được thiết kế.
+□ Chính sách cọc đã rõ và có cơ chế ngoại lệ.
+□ Yêu cầu pháp lý về chứng chỉ hành nghề đã được xác định.
+□ Chính sách dữ liệu và phân quyền đã được thiết kế.
+□ MVP và chỉ số thành công đã được chốt.
+
+KẾT LUẬN
+Trước khi code ứng dụng book lịch chăm sóc thú cưng, cần chốt mô hình kinh doanh, phân loại dịch vụ theo yêu cầu pháp lý và vận hành, 
+thiết kế hồ sơ thú cưng như một entity độc lập, và quyết định chính sách cọc/no-show ngay từ đầu.
+
+Ba bài toán kỹ thuật (lịch, hồ sơ, thanh toán) có thể làm dần. Phần "dễ chết" nhất là:
+- Dùng sai logic đặt lịch cho dịch vụ không phù hợp.
+- Bỏ qua chứng chỉ hành nghề thú y.
+- Để hồ sơ sức khỏe thú cưng bị phân mảnh.
+
+Hoàn thành checklist ở Mục 12 trước khi bắt đầu code sẽ giúp giảm đáng kể rủi ro phải làm lại và tăng khả năng MVP được đưa vào vận hành thật.
+
+
+
+
+
